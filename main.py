@@ -4,8 +4,6 @@ import numpy as np
 class wordlemizer():
     def __init__(self, word_base, tries = 6):
         self.words = {}
-        self.max_tries = tries
-        self.tries = 0
         self.letters = {}
         self.guessed_letters = []
 
@@ -19,42 +17,38 @@ class wordlemizer():
                 if len(word) == 5:
                     if not first_guess:
                         first_guess = word
-                    for position, letter in enumerate(word):
-                        if not letter in self.letters.keys():
-                            self.letters[letter] = {"count": 0, "count in pos": []}
-                        self.letters[letter]["count"] += 1
                         self.letters[letter]
                     self.words[word] = freq
 
-        self.guess = first_guess
-        print(f"My first guess: {first_guess}")
 
-    def enter_guess(self, results):
-        wrong, partial, right = results
+    def update_words(self, results):
         for word in self.words.keys():
-            # select only possibly correct words
-            # - fully correct letters
-            for letter, pos in right:
-                if word[pos] == letter:
-                    break
-            if not relevant:
-                del self.words[word]
-                continue
-
-            # - correct letter; wrong position
-            for letter, pos in partial:
-                if not word[pos] == letter:
-
-
-            # - delete impossible words
-            for letter, pos in wrong:
-                if word[pos] == letter:
+            # remove ruled out words
+            for letter, reason, positions in results:
+                # - letter not in word
+                if reason == -1 and letter in word:
                     del self.words[word]
-        # recalculate letter statistics
-        for letter, pos in wrong:
-            del self.letters[letter]
 
-    def get letter statistics
+                # - letter in word but position is wrong
+                if reason == 0:
+                    keep = False
+                    for pos in positions:
+                        if not word[pos] == letter:
+                            keep = True
+                    if not keep:
+                        del self.words[word]
+
+                if reason == 1 and not letter in word:
+                    del self.words[word]
+            # recalculate letter statistics
+
+    def get_letter_statistics(self):
+        for word in self.words.keys():
+            for position, letter in enumerate(word):
+                if not letter in self.letters.keys():
+                    self.letters[letter] = {"count": 0, "count in pos": []}
+                self.letters[letter]["count"] += 1
+
     def word_score(self, word):
         score = 0
         for letter in word:
