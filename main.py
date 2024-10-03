@@ -25,22 +25,26 @@ class wordlemizer():
         for word in self.words.keys():
             # remove ruled out words
             for letter, reason, positions in results:
-                # - letter not in word
-                if reason == -1 and letter in word:
-                    del self.words[word]
-
-                # - letter in word but position is wrong
-                if reason == 0:
-                    keep = False
-                    for pos in positions:
-                        if not word[pos] == letter:
-                            keep = True
-                    if not keep:
+                if letter in word:
+                    # - letter should not be in word
+                    if reason == -1:
                         del self.words[word]
 
-                if reason == 1 and not letter in word:
-                    del self.words[word]
-            # recalculate letter statistics
+                    # - partial letter in word
+                    if reason == 0:
+                        keep = False
+                        # where letter should not be
+                        for pos in positions:
+                            # keep if it has remaining possible positions
+                            if word[pos] == letter:
+                                del self.words[word]
+
+                # - letter in correct positions
+                if reason == 1:
+                    for i in range(len(word)):
+                        # remove words with any mismatch
+                        if i in positions and not word[i] == letter or i not in positions and word[i] == letter:
+                            del self.words[word]
 
     def get_letter_statistics(self):
         for word in self.words.keys():
