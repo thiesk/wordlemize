@@ -18,6 +18,8 @@ BACKGROUND_BRIGHT_MAGENTA = '\033[105m'
 BACKGROUND_BRIGHT_CYAN = '\033[106m'
 BACKGROUND_WHITE = '\033[107m'
 
+
+
 class Wordlemizer:
     def __init__(self, word_base, tries=6):
         self.words = {}
@@ -36,16 +38,26 @@ class Wordlemizer:
             for word, freq in reader:
                 if len(word) == 5:
                     self.words[word] = freq
-        self.__update_letter_statistics()
+                    for pos, letter in enumerate(word):
+                        if letter not in self.letter_scores.keys():
+                            self.letter_scores[letter] = [0, 0, 0, 0, 0]
+                        self.letter_scores[letter][pos] += 1
+        for word in self.words.keys():
+            self.word_scores[word] = 0
+            if len(set(word)) == len(word):
+                for pos, letter in enumerate(word):
+                    self.word_scores[word] += self.letter_scores[letter][pos]
         print(f"Loaded {len(self.words)} words")
+        print(self.topk())
 
-    def topk(self, k=10):
+    def topk(self, k=5):
         top_k = []
         current_score = 0
         for word, score in self.word_scores.items():
-            if current_score < score:
+            if current_score < score and len(set(word)) == len(word):
                 best_word = word
-                top_k.append((best_word, score))
+                # top_k.append((best_word, score))
+                top_k.append(best_word)
                 if len(top_k) > k:
                     top_k.pop()
                 current_score = score
@@ -61,7 +73,7 @@ class Wordlemizer:
                 out += color[action] + letter + RESET
             out += f"  -->  Remaining words: {n_words}" + '\n'
         print(out)
-        print(model.topk())
+        print(self.topk())
 
 
     def input(self, word, feedback):
@@ -114,13 +126,9 @@ class Wordlemizer:
                     break
                 if letter in word:
                     # - letter should not be in word
-                    if reason == -1:
-                        for i in range(len(word)):
-                            # remove words with any mismatch
-                            if i in positions and word[i] == letter:
-                                remove.append(word)
-                                gone = True
-                                break
+                    if reason == -1 and letter in word:
+                        remove.append(word)
+                        break
 
                     # - partial letter in word
                     if reason == 0:
@@ -132,7 +140,6 @@ class Wordlemizer:
                                 remove.append(word)
                                 gone = True
                                 break
-                        continue
 
                 # - letter in correct positions
                 if reason == 1:
@@ -142,17 +149,34 @@ class Wordlemizer:
                             remove.append(word)
                             gone = True
                             break
-                    continue
 
         for word in remove:
             del self.words[word]
 
+class Player:
+    def __init__(self):
+        self.model = Wordlemizer("data/unigram_freq.csv")
+
+    def play(self):
+        while True:
+            print('Type input to wordle.')
+            word = input()
+            print("Type output of wordle. Correct -> c; Wrong -> w; Wrong Position -> p")
+            feedback = input()
+            processed = []
+            for info in feedback:
+                if info == 'c':
+                    processed.append(1)
+                if info == 'w':
+                    processed.append(-1)
+                if info == 'p':
+                    processed.append(0)
+
+            self.model.input(word, processed)
+
+            self.model.render()
+            print("done")
 
 if __name__ == '__main__':
-    model = Wordlemizer("data/unigram_freq.csv")
-
-    model.input("pilot", [-1, -1, -1, 1, -1])
-    model.input("major", [-1, 1, -1, 1, -1])
-    model.input("canon", [-1, 1, -1, 1, 1])
-
-    model.render()
+    p = Player()
+    p.play()
