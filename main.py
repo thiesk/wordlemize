@@ -22,12 +22,13 @@ class Wordlemizer:
     def __init__(self, word_base, tries=6):
         self.words = {}
 
-        # -1 unknown, 0 in word, 1 correct
         # list of (letter, reason, positions)
         self.known_letters = {}
         self.letter_scores = {}
         self.word_scores = {}
         self.not_known_letters = {}
+        # -1 unknown, 0 in word, 1 correct
+        self.history = []
 
         # load words from dataset into model
         with open(word_base, 'r') as words:
@@ -50,26 +51,30 @@ class Wordlemizer:
                 current_score = score
         return list(reversed(top_k))
 
-    def input(self, word, feedback):
-        print(f"Input:")
+    def render(self):
         out = ""
         color = {-1: BACKGROUND_BLACK,
                  0: BACKGROUND_YELLOW,
                  1: BACKGROUND_GREEN}
-        for letter, action in zip(word,feedback):
-
-            out += color[action] + letter + RESET
+        for word, feedback, n_words in self.history:
+            for letter, action in zip(word, feedback):
+                out += color[action] + letter + RESET
+            out += f"  -->  Remaining words: {n_words}" + '\n'
         print(out)
+        print(model.topk())
+
+
+    def input(self, word, feedback):
         self.known_letters = {}
         for pos, letter in enumerate(word):
             self.__add_know_letter(letter, feedback[pos], [pos])
-        self.update()
-        print(len(self.words))
+        self.__update()
+        self.history.append((word, feedback, len(self.words)))
 
     def __add_know_letter(self, letter, reason, positions=None):
         self.known_letters[letter] = reason, positions
 
-    def update(self):
+    def __update(self):
         self.__update_words()
         self.__update_letter_statistics()
         self.__update_letter_scores()
@@ -150,4 +155,4 @@ if __name__ == '__main__':
     model.input("major", [-1, 1, -1, 1, -1])
     model.input("canon", [-1, 1, -1, 1, 1])
 
-    print(model.topk())
+    model.render()
