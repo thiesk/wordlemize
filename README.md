@@ -1,0 +1,2 @@
+# wordlemize
+statistical worlde solver
